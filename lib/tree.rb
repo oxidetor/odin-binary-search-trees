@@ -33,10 +33,43 @@ class Tree
     end
   end
 
-  def delete(value)
-    # TODO: When matched node is part of leaf
-    # TODO: When matched node has only one child node
-    # TODO: When matched node has two children
+  def delete(value, root = @root)
+    return if root.nil?
+
+    delete_child(root, 'left') if matching_child?(root.left, value)
+    delete_child(root, 'right') if matching_child?(root.right, value)
+
+    delete(value, root.left)
+    delete(value, root.right)
+  end
+
+  def delete_child(parent, side)
+    case direct_children(parent.send(side)).count
+    when 0
+      parent.send("#{side}=", nil)
+    when 1
+      parent.send("#{side}=", direct_children(parent.send(side))[0])
+    when 2
+      case smallest(parent.send(side).right)
+      in [smallest, smallest_parent]
+        parent.send(side).data = smallest.data
+        smallest_parent.left = nil
+      end
+    end
+  end
+
+  def smallest(root, parent = nil)
+    return [root, parent] if root.left.nil?
+
+    smallest(root.left, root)
+  end
+
+  def matching_child?(root, value)
+    !root.nil? && root.data == value
+  end
+
+  def direct_children(node)
+    [node.left, node.right].compact
   end
 
   def pretty_print(node = @root, prefix = '', is_left = true)
@@ -50,6 +83,11 @@ array = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324]
 tree = Tree.new(array)
 puts tree.root.data
 tree.pretty_print
-tree.insert(3)
-tree.insert(4)
+# tree.delete(4)
+# tree.pretty_print
+# tree.insert(9)
+# tree.pretty_print
+# tree.delete(9)
+# tree.pretty_print
+tree.delete(67)
 tree.pretty_print
