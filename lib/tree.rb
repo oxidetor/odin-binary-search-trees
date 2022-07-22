@@ -26,7 +26,7 @@ class Tree
       return root.left = Node.new(value) if root.left.nil?
 
       insert(value, root.left)
-    else
+    elsif value > root.data
       return root.right = Node.new(value) if root.right.nil?
 
       insert(value, root.right)
@@ -36,8 +36,8 @@ class Tree
   def delete(value, root = @root)
     return if root.nil?
 
-    delete_child(root, 'left') if matching_child?(root.left, value)
-    delete_child(root, 'right') if matching_child?(root.right, value)
+    delete_child(root, 'left') if matches?(root.left, value)
+    delete_child(root, 'right') if matches?(root.right, value)
 
     delete(value, root.left)
     delete(value, root.right)
@@ -64,8 +64,32 @@ class Tree
     smallest(root.left, root)
   end
 
-  def matching_child?(root, value)
+  def find(value, root = @root)
+    return if root.nil?
+    return root if root.data == value
+
+    find(value, root.left) || find(value, root.right)
+  end
+
+  def level_order(children_to_visit = [@root], &block)
+    return if children_to_visit.empty?
+
+    current_child = children_to_visit.first
+    block.call current_child
+    children_to_visit.push(*direct_children(current_child))
+    level_order(children_to_visit.drop(1), &block)
+  end
+
+  def matches?(root, value)
     !root.nil? && root.data == value
+  end
+
+  # TODO: Fix
+  def parent(node, root = @root)
+    return if root.nil?
+    return root if root.left == node || root.right == node
+
+    find(node, root.left) || find(value, root.right)
   end
 
   def direct_children(node)
@@ -83,11 +107,17 @@ array = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324]
 tree = Tree.new(array)
 puts tree.root.data
 tree.pretty_print
-# tree.delete(4)
-# tree.pretty_print
+tree.delete(4)
+tree.pretty_print
 # tree.insert(9)
 # tree.pretty_print
 # tree.delete(9)
 # tree.pretty_print
 tree.delete(67)
 tree.pretty_print
+tree.insert(17)
+
+puts tree.find(6)
+tree.pretty_print
+
+tree.level_order { |node| puts node }
