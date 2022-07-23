@@ -127,6 +127,16 @@ class Tree
     depth(parent(node), depth + 1)
   end
 
+  def balanced?(node = @root)
+    return if node.nil?
+
+    if direct_children(node).any? { |child| direct_children(child).count.zero? }
+      return (height(node.left) - height(node.right)).abs <= 1
+    end
+
+    balanced?(node.left) && balanced?(node.right)
+  end
+
   def matches?(root, value)
     !root.nil? && root.data == value
   end
@@ -180,3 +190,14 @@ p tree.postorder
 p tree.height(tree.find(17))
 p tree.parent(tree.find(8))
 p tree.depth(tree.find(11))
+puts tree.balanced?
+tree.pretty_print
+puts tree.balanced?
+tree.delete(17)
+tree.pretty_print
+tree.insert(27)
+tree.pretty_print
+puts tree.balanced?
+tree.insert(11)
+tree.pretty_print
+puts tree.balanced?
