@@ -4,14 +4,13 @@ class Tree
   attr_reader :root
 
   def initialize(array)
-    @root = build_tree(array)
+    @root = build_tree(array.sort.uniq)
   end
 
   def build_tree(array)
-    return if array.length.zero?
+    return nil if array.empty?
     return Node.new(array.first) if array.length == 1
 
-    array = array.sort.uniq
     middle = array.length / 2
     left = build_tree(array[0..middle - 1])
     right = build_tree(array[middle + 1..])
@@ -20,35 +19,41 @@ class Tree
   end
 
   def insert(value, root = @root)
+    return nil if value == root.data
+
     if value < root.data
-      return root.left = Node.new(value) if root.left.nil?
-
-      insert(value, root.left)
-    elsif value > root.data
-      return root.right = Node.new(value) if root.right.nil?
-
-      insert(value, root.right)
+      root.left.nil? ? root.left = Node.new(value) : insert(value, root.left)
+    else
+      root.right.nil? ? root.right = Node.new(value) : insert(value, root.right)
     end
   end
 
-  def delete(value, node = @root)
-    return if node.nil?
+  def delete(value)
+    matched_node = find(value)
+    return nil if matched_node.nil?
 
-    delete_node(node) if node.data == value
-    delete(value, node.left) || delete(value, node.right)
-  end
-
-  def delete_node(node)
-    case direct_children(node).count
+    case direct_children(matched_node).count
     when 0
-      update_parent_pointer(node, nil)
+      delete_leaf(matched_node)
     when 1
-      update_parent_pointer(node, *node.direct_children)
+      delete_half_node(matched_node)
     when 2
-      smallest = smallest(node.right)
-      update_parent_pointer(smallest, nil, 'left')
-      node.data = smallest.data
+      delete_full_node(matched_node)
     end
+  end
+
+  def delete_leaf(node)
+    update_parent_pointer(node, nil)
+  end
+
+  def delete_half_node(node)
+    update_parent_pointer(node, *direct_children(node))
+  end
+
+  def delete_full_node(node)
+    smallest = smallest(node.right)
+    update_parent_pointer(smallest, smallest == node.right ? direct_children(smallest).first : nil)
+    node.data = smallest.data
   end
 
   def update_parent_pointer(node, new_node, side = nil)
@@ -65,19 +70,23 @@ class Tree
 
   def find(value, root = @root)
     return if root.nil?
-    return root if root.data == value
 
-    find(value, root.left) || find(value, root.right)
+    if root.data < value
+      find(value, root.right)
+    elsif root.data > value
+      find(value, root.left)
+    else
+      root
+    end
   end
 
-  def level_order(children_to_visit = [@root], values = [], &block)
-    return if children_to_visit.empty?
+  def level_order(queue = [@root], values = [], &block)
+    return if queue.empty?
 
-    current_child = children_to_visit.first
-    block.call current_child if block_given?
-    values.push current_child.data unless block_given?
-    children_to_visit.push(*direct_children(current_child))
-    level_order(children_to_visit.drop(1), values, &block)
+    block_given? ? block.call(queue.first) : values.push(queue.first.data)
+    queue.push(*direct_children(queue.first))
+    level_order(queue.drop(1), values, &block)
+
     values unless block_given?
   end
 
@@ -85,19 +94,19 @@ class Tree
     return if root.nil?
 
     inorder(root.left, values, &block)
-    block.call root if block_given?
-    values.push root.data unless block_given?
+    block_given? ? block.call(root) : values.push(root.data)
     inorder(root.right, values, &block)
+
     values unless block_given?
   end
 
   def preorder(root = @root, values = [], &block)
     return if root.nil?
 
-    block.call root if block_given?
-    values.push root.data unless block_given?
+    block_given? ? block.call(root) : values.push(root.data)
     preorder(root.left, values, &block)
     preorder(root.right, values, &block)
+
     values unless block_given?
   end
 
@@ -106,8 +115,8 @@ class Tree
 
     postorder(root.left, values, &block)
     postorder(root.right, values, &block)
-    block.call root if block_given?
-    values.push root.data unless block_given?
+    block_given? ? block.call(root) : values.push(root.data)
+
     values unless block_given?
   end
 
@@ -131,21 +140,21 @@ class Tree
   end
 
   def balanced?(node = @root)
-    return if node.nil?
-
-    if direct_children(node).any? { |child| direct_children(child).count.zero? }
-      return (height(node&.left) - height(node&.right)).abs <= 1
-    end
+    return sides_height_difference(node) <= 1 if missing_grandchild?(node)
 
     balanced?(node.left) && balanced?(node.right)
   end
 
-  def rebalance
-    @root = build_tree(inorder(@root))
+  def sides_height_difference(node)
+    (height(node&.left) - height(node&.right)).abs
   end
 
-  def matches?(root, value)
-    !root.nil? && root.data == value
+  def missing_grandchild?(node)
+    direct_children(node).any? { |child| direct_children(child).count.zero? }
+  end
+
+  def rebalance!
+    @root = build_tree(inorder(@root))
   end
 
   def parent(node, root = @root)
