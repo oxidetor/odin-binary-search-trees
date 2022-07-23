@@ -154,7 +154,7 @@ class Tree
   end
 
   def rebalance!
-    @root = build_tree(inorder(@root))
+    @root = build_tree(inorder)
   end
 
   def parent(node, root = @root)
