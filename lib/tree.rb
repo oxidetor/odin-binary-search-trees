@@ -112,16 +112,45 @@ class Tree
     values unless block_given?
   end
 
+  def height(node, length = 0, path_lengths = [])
+    return path_lengths.push(length) if node.nil?
+
+    height(node.left, length + 1, path_lengths)
+    height(node.right, length + 1, path_lengths)
+
+    path_lengths.max - 1
+  end
+
+  # TODO: Write depth method
+  # def depth(node)
+  #   return if node.nil?
+
+  #   depth = 0
+  #   loop do
+  #     break if parent(node).nil?
+
+  #     node = parent(node)
+  #     depth += 1
+  #   end
+  #   depth
+  # end
+
+  def depth(node, depth = 0)
+    return if node.nil?
+    return depth if parent(node).nil?
+
+    depth(parent(node), depth + 1)
+  end
+
   def matches?(root, value)
     !root.nil? && root.data == value
   end
 
-  # TODO: Doesn't return the corrent parent node
   def parent(node, root = @root)
-    return if root.nil?
+    return if root.nil? || node.nil?
     return root if root.left == node || root.right == node
 
-    find(node, root.left) || find(value, root.right)
+    parent(node, root.left) || parent(node, root.right)
   end
 
   def direct_children(node)
@@ -162,3 +191,7 @@ puts 'Post Order'
 tree.postorder { |node| puts node }
 puts 'Post Order (w/o block)'
 p tree.postorder
+
+p tree.height(tree.find(17))
+p tree.parent(tree.find(8))
+p tree.depth(tree.find(11))
