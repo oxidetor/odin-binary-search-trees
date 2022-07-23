@@ -112,7 +112,10 @@ class Tree
   end
 
   def height(node, length = 0, path_lengths = [])
-    return path_lengths.push(length) if node.nil?
+    if node.nil?
+      path_lengths.push(length)
+      return 0
+    end
 
     height(node.left, length + 1, path_lengths)
     height(node.right, length + 1, path_lengths)
@@ -131,10 +134,14 @@ class Tree
     return if node.nil?
 
     if direct_children(node).any? { |child| direct_children(child).count.zero? }
-      return (height(node.left) - height(node.right)).abs <= 1
+      return (height(node&.left) - height(node&.right)).abs <= 1
     end
 
     balanced?(node.left) && balanced?(node.right)
+  end
+
+  def rebalance
+    @root = build_tree(inorder(@root))
   end
 
   def matches?(root, value)
@@ -199,5 +206,10 @@ tree.insert(27)
 tree.pretty_print
 puts tree.balanced?
 tree.insert(11)
+tree.pretty_print
+puts tree.balanced?
+puts tree.height(tree.find(9))
+p tree.inorder
+tree.rebalance
 tree.pretty_print
 puts tree.balanced?
