@@ -12,9 +12,7 @@ class Tree
     return Node.new(array.first) if array.length == 1
 
     array = array.sort.uniq
-
     middle = array.length / 2
-
     left = build_tree(array[0..middle - 1])
     right = build_tree(array[middle + 1..])
 
@@ -43,6 +41,7 @@ class Tree
     delete(value, root.right)
   end
 
+  # TODO: Simplify logic in case 2
   def delete_child(parent, side)
     case direct_children(parent.send(side)).count
     when 0
@@ -58,6 +57,7 @@ class Tree
     end
   end
 
+  # TODO: Return only smallest node
   def smallest(root, parent = nil)
     return [root, parent] if root.left.nil?
 
@@ -71,20 +71,52 @@ class Tree
     find(value, root.left) || find(value, root.right)
   end
 
-  def level_order(children_to_visit = [@root], &block)
+  def level_order(children_to_visit = [@root], values = [], &block)
     return if children_to_visit.empty?
 
     current_child = children_to_visit.first
-    block.call current_child
+    block.call current_child if block_given?
+    values.push current_child.data unless block_given?
     children_to_visit.push(*direct_children(current_child))
-    level_order(children_to_visit.drop(1), &block)
+    level_order(children_to_visit.drop(1), values, &block)
+    values unless block_given?
+  end
+
+  def inorder(root = @root, values = [], &block)
+    return if root.nil?
+
+    inorder(root.left, values, &block)
+    block.call root if block_given?
+    values.push root.data unless block_given?
+    inorder(root.right, values, &block)
+    values unless block_given?
+  end
+
+  def preorder(root = @root, values = [], &block)
+    return if root.nil?
+
+    block.call root if block_given?
+    values.push root.data unless block_given?
+    preorder(root.left, values, &block)
+    preorder(root.right, values, &block)
+    values unless block_given?
+  end
+
+  def postorder(root = @root, values = [], &block)
+    return if root.nil?
+
+    postorder(root.left, values, &block)
+    postorder(root.right, values, &block)
+    block.call root if block_given?
+    values.push root.data unless block_given?
+    values unless block_given?
   end
 
   def matches?(root, value)
     !root.nil? && root.data == value
   end
 
-  # TODO: Fix
+  # TODO: Doesn't return the corrent parent node
   def parent(node, root = @root)
     return if root.nil?
     return root if root.left == node || root.right == node
@@ -109,15 +141,24 @@ puts tree.root.data
 tree.pretty_print
 tree.delete(4)
 tree.pretty_print
-# tree.insert(9)
-# tree.pretty_print
-# tree.delete(9)
-# tree.pretty_print
 tree.delete(67)
 tree.pretty_print
 tree.insert(17)
-
-puts tree.find(6)
 tree.pretty_print
 
+puts 'Level Order'
 tree.level_order { |node| puts node }
+puts 'Level Order (w/o block)'
+p tree.level_order
+puts 'In Order'
+tree.inorder { |node| puts node }
+puts 'In Order (w/o block)'
+p tree.inorder
+puts 'Pre Order'
+tree.preorder { |node| puts node }
+puts 'Pre Order (w/o block)'
+p tree.preorder
+puts 'Post Order'
+tree.postorder { |node| puts node }
+puts 'Post Order (w/o block)'
+p tree.postorder
