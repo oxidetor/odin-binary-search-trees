@@ -31,37 +31,36 @@ class Tree
     end
   end
 
-  def delete(value, root = @root)
-    return if root.nil?
+  def delete(value, node = @root)
+    return if node.nil?
 
-    delete_child(root, 'left') if matches?(root.left, value)
-    delete_child(root, 'right') if matches?(root.right, value)
-
-    delete(value, root.left)
-    delete(value, root.right)
+    delete_node(node) if node.data == value
+    delete(value, node.left) || delete(value, node.right)
   end
 
-  # TODO: Simplify logic in case 2
-  def delete_child(parent, side)
-    case direct_children(parent.send(side)).count
+  def delete_node(node)
+    case direct_children(node).count
     when 0
-      parent.send("#{side}=", nil)
+      update_parent_pointer(node, nil)
     when 1
-      parent.send("#{side}=", direct_children(parent.send(side))[0])
+      update_parent_pointer(node, *node.direct_children)
     when 2
-      case smallest(parent.send(side).right)
-      in [smallest, smallest_parent]
-        parent.send(side).data = smallest.data
-        smallest_parent.left = nil
-      end
+      smallest = smallest(node.right)
+      update_parent_pointer(smallest, nil, 'left')
+      node.data = smallest.data
     end
   end
 
-  # TODO: Return only smallest node
-  def smallest(root, parent = nil)
-    return [root, parent] if root.left.nil?
+  def update_parent_pointer(node, new_node, side = nil)
+    parent = parent(node)
+    side ||= parent.left == node ? 'left' : 'right'
+    parent.send("#{side}=", new_node)
+  end
 
-    smallest(root.left, root)
+  def smallest(root)
+    return root if root.left.nil?
+
+    smallest(root.left)
   end
 
   def find(value, root = @root)
@@ -120,20 +119,6 @@ class Tree
 
     path_lengths.max - 1
   end
-
-  # TODO: Write depth method
-  # def depth(node)
-  #   return if node.nil?
-
-  #   depth = 0
-  #   loop do
-  #     break if parent(node).nil?
-
-  #     node = parent(node)
-  #     depth += 1
-  #   end
-  #   depth
-  # end
 
   def depth(node, depth = 0)
     return if node.nil?
